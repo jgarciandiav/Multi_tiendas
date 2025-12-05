@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="app-container">
+    <aside class="sidebar">
+        <div class="brand">
+            <h2>MultiTiendas</h2>
+            <p>Sistema de gestión</p>
+        </div>
+
+        <nav>
+            <!-- Sección: Mis Compras -->
+            <div class="menu-item">
+                <span>📦 Mis Compras</span>
+                <i class="arrow">▶</i>
+            </div>
+            <a href="{% url 'historial_compras' %}" class="submenu-item">Historial</a>
+
+            <!-- Categorías dinámicas -->
+            {% for categoria in categorias %}
+                <div class="menu-item">
+                    <span>{{ categoria.nombre }}</span>
+                    <i class="arrow">▶</i>
+                </div>
+                {% for subcat in categoria.subcategorias.all %}
+                    <a href="?categoria={{ subcat.id }}" class="submenu-item">{{ subcat.nombre }}</a>
+                {% endfor %}
+            {% endfor %}
+
+            <!-- Opciones adicionales -->
+            <div class="menu-item">
+                <span>👤 Mi Cuenta</span>
+                <i class="arrow">▶</i>
+            </div>
+            <a href="#" class="submenu-item">Mi Perfil</a>
+            <a href="{% url 'logout' %}" class="submenu-item">Cerrar Sesión</a>
+            <a href="{% url 'mi_perfil' %}" class="submenu-item">Mi Perfil</a>
+        </nav>
+    </aside>
+    <main class="main-content">
+        <header class="header">
+            <form method="get">
+                <select name="categoria" class="category-filter" onchange="this.form.submit()">
+                    <option value="">Todos los productos</option>
+                    {% for cat in categorias %}
+                        <option value="{{ cat.id }}" {% if categoria_seleccionada == cat.id|stringformat:"i" %}selected{% endif %}>
+                            {{ cat.nombre }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </form>
+            <div class="header-actions">
+                <!-- Botón Mi Carrito -->
+                <a href="{% url 'ver_carrito' %}" class="cart-btn">
+                    🛒 Mi Carrito
+                    {% if carrito_total_items > 0 %}
+                        <span class="badge">{{ carrito_total_items }}</span>
+                    {% endif %}
+                </a>
+
+                <!-- Menú usuario -->
+                <div class="user-dropdown">
+                    <button class="user-btn">
+                        👤 {{ user.username }}
+                    </button>
+                    <div class="dropdown-menu" id="userDropdown">
+                        <a href="{% url 'mi_perfil' %}" class="dropdown-item">Mi Perfil</a>
+                        <a href="{% url 'historial_compras' %}" class="dropdown-item">Historial</a>
+                        <a href="{% url 'logout' %}" class="dropdown-item">Cerrar Sesión</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <section class="products-section">
+            <h2>Todos los Productos</h2>
+            <div class="products-grid">
+                {% for producto in productos %}
+                    <div class="product-card">
+                        {% if producto.imagen %}
+                            <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}">
+                        {% else %}
+                            <div class="placeholder-img">📷</div>
+                        {% endif %}
+                        <h3>{{ producto.nombre }}</h3>
+                        <p class="price">S/ {{ producto.precio }}</p>
+                        <p class="stock">Stock: {{ producto.cantidad }}</p>
+                        <form method="post" action="{% url 'agregar_al_carrito' producto.id %}" style="margin:0;">
+                            {% csrf_token %}
+                            <input type="hidden" name="cantidad" value="1">
+                            <button type="submit" class="buy-btn">🛒 Añadir al Carrito</button>
+                        </form>
+                    </div>
+                {% empty %}
+                    <p>No hay productos disponibles.</p>
+                {% endfor %}
+            </div>
+        </section>
+    </main>
+</div>
+{% endblock %}

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Orden #{{ orden.id }}</title>
+    <style>
+        @page { size: letter; margin: 2cm; }
+        body { font-family: "Helvetica", "Arial", sans-serif; font-size: 12pt; color: #333; }
+        .header { text-align: center; border-bottom: 3px double #000; padding-bottom: 10px; margin-bottom: 20px; }
+        .header h1 { color: #0066cc; margin: 0; font-size: 24pt; }
+        .datos-empresa { font-size: 10pt; color: #666; margin-top: 5px; }
+        .datos-orden { margin: 20px 0; padding: 10px; background: #f9f9f9; border-left: 4px solid #0066cc; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { border: 1px solid #999; padding: 8px 10px; text-align: left; }
+        th { background-color: #0066cc; color: white; }
+        .total { font-size: 14pt; font-weight: bold; text-align: right; margin-top: 10px; }
+        .footer { margin-top: 30px; text-align: center; font-size: 10pt; color: #777; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📦 ORDEN DE COMPRA</h1>
+        <div class="datos-empresa">
+            {{ empresa.nombre }} | RUC: {{ empresa.ruc }}<br>
+            {{ empresa.direccion }} | Tel: {{ empresa.telefono }}
+        </div>
+    </div>
+
+    <div class="datos-orden">
+        <p><strong>Orden #:</strong> {{ orden.id }}</p>
+        <p><strong>Cliente:</strong> {{ orden.usuario.get_full_name|default:orden.usuario.username }}</p>
+        <p><strong>Fecha:</strong> {{ orden.fecha|date:"d \d\e F \d\e Y \a \l\a\s H:i" }}</p>
+        <p><strong>Estado:</strong> {{ orden.get_estado_display }}</p>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Producto</th>
+                <th>Cantidad</th>
+                <th>P.U. (S/)</th>
+                <th>Subtotal (S/)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in orden.items.all %}
+            <tr>
+                <td>{{ item.producto_nombre }}</td>
+                <td>{{ item.cantidad }}</td>
+                <td>{{ item.precio_unitario }}</td>
+                <td>{{ item.subtotal }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="3" style="text-align:right;"><strong>TOTAL:</strong></td>
+                <td><strong>S/ {{ orden.total }}</strong></td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <div class="footer">
+        <p>Gracias por tu compra. ¡Visítanos pronto!</p>
+        <p>Documento generado el {{ fecha_hoy }} | Este documento no tiene validez fiscal.</p>
+    </div>
+</body>
+</html>

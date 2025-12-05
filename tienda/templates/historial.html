@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>📦 Historial de Compras</h2>
+
+    {% if ordenes %}
+        <div class="list-group">
+            {% for orden in ordenes %}
+                <a href="{% url 'detalle_orden' orden.id %}" class="list-group-item list-group-item-action">
+                    <div class="d-flex justify-content-between">
+                        <strong>Orden #{{ orden.id }}</strong>
+                        <span>{{ orden.fecha|date:"d M Y H:i" }}</span>
+                    </div>
+                    <div>
+                        <span>{{ orden.total_items }} artículo(s)</span> • 
+                        <strong>Total: S/ {{ orden.total }}</strong>
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info">No has realizado compras aún.</div>
+    {% endif %}
+
+    <a href="{% url 'dashboard' %}" class="btn btn-primary mt-3">Seguir comprando</a>
+</div>
+{% endblock %}

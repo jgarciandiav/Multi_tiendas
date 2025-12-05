@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h1 class="logo">MultiTiendas</h1>
+
+    <div class="login-card">
+        <h2>Inicio de Sesión</h2>
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-error">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label>Usuario</label>
+                {{ form.username }}
+            </div>
+            <div class="form-group">
+                <label>Contraseña</label>
+                {{ form.password }}
+            </div>
+            <button type="submit" class="btn-login">Iniciar Sesión</button>
+        </form>
+    </div>
+
+    <div class="footer-text">
+        <p>Tu tienda donde todo lo puedes encontrar, ahora más eficiente.</p>
+        <p>Descubre desde electrónica básica y artículos para el hogar, hasta juguetes, papelería y los regalos más originales.</p>
+        <p class="cta">¡Visítanos y encuentra lo que necesitas!</p>
+    </div>
+</div>
+{% endblock %}

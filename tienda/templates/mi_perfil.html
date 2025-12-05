@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>👤 Mi Perfil</h2>
+    <div class="card">
+        <div class="card-body">
+            <p><strong>Usuario:</strong> {{ user.username }}</p>
+            <p><strong>Nombre:</strong> {{ user.get_full_name|default:"No especificado" }}</p>
+            <p><strong>Email:</strong> {{ user.email|default:"No especificado" }}</p>
+        </div>
+    </div>
+    <a href="{% url 'dashboard' %}" class="btn btn-primary mt-3">← Volver al Dashboard</a>
+</div>
+{% endblock %}

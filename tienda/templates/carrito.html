@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% load math_extras %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>🛒 Mi Carrito</h2>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    {% if carrito.items.count == 0 %}
+        <div class="alert alert-info">Tu carrito está vacío.</div>
+        <a href="{% url 'dashboard' %}" class="btn btn-primary">Seguir comprando</a>
+    {% else %}
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th>Precio</th>
+                        <th>Cantidad</th>
+                        <th>Subtotal</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                        <tr>
+                            <td>{{ item.producto.nombre }}</td>
+                            <td>S/ {{ item.producto.precio }}</td>
+                            <td>{{ item.cantidad }}</td>
+                            <td>S/ {{ item.cantidad|mul:item.producto.precio }}</td>
+                            <td>
+                                <form method="post" action="{% url 'quitar_del_carrito' item.id %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-danger"
+                                            onclick="return confirm('¿Seguro que deseas quitar este producto?')">
+                                        ❌ Quitar
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3"><strong>Total:</strong></td>
+                        <td><strong>S/ {{ carrito.total_precio }}</strong></td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <div class="d-flex gap-2">
+            <a href="{% url 'dashboard' %}" class="btn btn-outline-primary">Seguir comprando</a>
+            <form method="post" action="{% url 'procesar_compra' %}" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-success"
+                        onclick="return confirm('¿Confirmar compra?')">
+                    ✅ Procesar Compra
+                </button>
+            </form>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
