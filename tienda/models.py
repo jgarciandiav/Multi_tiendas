@@ -27,7 +27,7 @@ class Categoria(models.Model):
 class Producto(models.Model):
     nombre = models.CharField(max_length=100)
     descripcion = models.TextField(blank=True, null=True)
-    precio = models.DecimalField(max_digits=10, decimal_places=2)
+    precio = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # ← Puede ser NULL
     cantidad = models.PositiveIntegerField()
     imagen = models.ImageField(upload_to='productos/', blank=True, null=True)
     usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name='productos')
@@ -38,13 +38,19 @@ class Producto(models.Model):
         blank=True,
         related_name='productos'
     )
+    fecha_vencimiento = models.DateField(null=True, blank=True)  # ← Para almacenero
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='productos_creados')
     updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='productos_actualizados')
 
+    # Para controlar visibilidad en el dashboard de usuario
+    visible_para_usuario = models.BooleanField(default=False)
+
     @property
     def precio_total(self):
+        if self.precio is None:
+            return Decimal('0.00')
         return self.precio * self.cantidad
 
     class Meta:
@@ -53,8 +59,18 @@ class Producto(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"{self.nombre} (x{self.cantidad}) - S/{self.precio}"
+        return f"{self.nombre} (x{self.cantidad}) - S/{self.precio or 'Sin precio'}"
 
+    def save(self, *args, **kwargs):
+        # Si tiene precio, marcar como visible
+        if self.precio is not None:
+            self.visible_para_usuario = True
+        else:
+            self.visible_para_usuario = False
+        super().save(*args, **kwargs)
+
+
+# ===== MODELOS DE CARRO Y ORDEN (sin cambios) =====
 
 class Carrito(models.Model):
     usuario = models.OneToOneField(User, on_delete=models.CASCADE, related_name='carrito')

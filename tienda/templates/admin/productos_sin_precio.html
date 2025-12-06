@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Productos sin Precio - MultiTiendas{% endblock %}
+{% block body_class %}admin-dashboard{% endblock %}
+
+{% block content %}
+<div class="app-container">
+    <aside class="sidebar">
+        <div class="brand">
+            <h2>MultiTiendas</h2>
+            <p>Sistema de gestión</p>
+        </div>
+        <nav>
+            <div class="menu-item">
+                <span>📦 Todos los Productos</span>
+                <i class="arrow">▶</i>
+            </div>
+            <a href="{% url 'dashboard' %}" class="submenu-item">Ver Productos</a>
+
+            <div class="menu-item">
+                <span>📦 Productos del Almacenero</span>
+                <i class="arrow">▶</i>
+            </div>
+            <a href="{% url 'admin_productos_sin_precio' %}" class="submenu-item active">Asignar Precios</a>
+
+            <div class="menu-item">
+                <span>📊 Ver Productos Vendidos</span>
+                <i class="arrow">▶</i>
+            </div>
+            <a href="{% url 'admin_productos_vendidos' %}" class="submenu-item">Resumen por Fecha</a>
+
+            <div class="menu-item">
+                <span>👥 Gestión de Usuarios</span>
+                <i class="arrow">▶</i>
+            </div>
+            <a href="{% url 'admin_gestion_usuarios' %}" class="submenu-item">Administrar Usuarios</a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <header class="header">
+            <h2>Productos del Almacenero</h2>
+            <div class="header-actions">
+                <div class="user-btn">
+                    <span>👤 {{ user.username }}</span>
+                </div>
+            </div>
+        </header>
+
+        <section class="products-section">
+            {% if productos %}
+                <div class="products-grid">
+                    {% for producto in productos %}
+                        <div class="product-card almacenero">
+                            {% if producto.imagen %}
+                                <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}">
+                            {% else %}
+                                <div class="placeholder-img">📷</div>
+                            {% endif %}
+                            <div class="product-card-content">
+                                <h3>{{ producto.nombre }}</h3>
+                                
+                                <p><strong>Tipo:</strong> 
+                                    {% if producto.categoria %}
+                                        {{ producto.categoria.nombre }}
+                                    {% else %}
+                                        <span class="text-muted">Sin tipo</span>
+                                    {% endif %}
+                                </p>
+                                
+                                <p><strong>Categoría:</strong> 
+                                    {% if producto.categoria %}
+                                        {% if producto.categoria.padre %}
+                                            {{ producto.categoria.padre.nombre }}
+                                        {% else %}
+                                            {{ producto.categoria.nombre }}
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">Sin categoría</span>
+                                    {% endif %}
+                                </p>
+                                
+                                <p><strong>Stock:</strong> {{ producto.cantidad }}</p>
+                                
+                                {% if producto.fecha_vencimiento %}
+                                    <p class="vencimiento">
+                                        <strong>⚠️ Vence:</strong> {{ producto.fecha_vencimiento|date:"d/m/Y" }}
+                                    </p>
+                                {% endif %}
+                                
+                                <p class="price text-muted">
+                                    Precio: 
+                                    <span class="precio-sin-asignar">Sin asignar</span>
+                                </p>
+                                
+                                <a href="{% url 'admin_asignar_precio' producto.id %}" class="btn btn-primary">
+                                    💰 Asignar Precio
+                                </a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">📦</div>
+                    <h3>No hay productos sin precio</h3>
+                    <p>Todos los productos ya tienen un precio asignado.</p>
+                    <a href="{% url 'dashboard' %}" class="btn btn-outline-primary">Ver Productos Disponibles</a>
+                </div>
+            {% endif %}
+        </section>
+    </main>
+</div>
+
+<style>
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    grid-column: 1 / -1;
+}
+
+.empty-icon {
+    font-size: 5rem;
+    color: #bdc3c7;
+    margin-bottom: 20px;
+}
+
+.empty-state h3 {
+    color: #2c3e50;
+    margin-bottom: 15px;
+}
+
+.products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 25px;
+}
+</style>
+{% endblock %}

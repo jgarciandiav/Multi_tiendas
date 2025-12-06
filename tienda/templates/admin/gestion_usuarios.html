@@ -1,0 +1,242 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Usuarios - MultiTiendas{% endblock %}
+{% block body_class %}admin-dashboard{% endblock %}
+
+{% block content %}
+<div class="app-container">
+    <aside class="sidebar">
+        <div class="brand">
+            <h2>MultiTiendas</h2>
+            <p>Sistema de gestión</p>
+        </div>
+        <nav>
+            <div class="menu-item">
+                <span>📦 Todos los Productos</span>
+                <i class="arrow">▶</i>
+            </div>
+            <a href="{% url 'dashboard' %}" class="submenu-item">Ver Productos</a>
+
+            <div class="menu-item">
+                <span>📦 Productos del Almacenero</span>
+                <i class="arrow">▶</i>
+            </div>
+            <a href="{% url 'admin_productos_sin_precio' %}" class="submenu-item">Asignar Precios</a>
+
+            <div class="menu-item">
+                <span>📊 Ver Productos Vendidos</span>
+                <i class="arrow">▶</i>
+            </div>
+            <a href="{% url 'admin_productos_vendidos' %}" class="submenu-item">Resumen por Fecha</a>
+
+            <div class="menu-item">
+                <span>👥 Gestión de Usuarios</span>
+                <i class="arrow">▶</i>
+            </div>
+            <a href="{% url 'admin_gestion_usuarios' %}" class="submenu-item">Administrar Usuarios</a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <header class="header">
+            <div class="header-title">
+                <h2>👥 Gestión de Usuarios</h2>
+                <p class="subtitle">Administra roles y estado de los usuarios del sistema</p>
+            </div>
+            <div class="header-actions">
+                <a href="{% url 'admin_crear_usuario' %}" class="btn btn-success">
+                    <i class="fas fa-plus"></i> Registrar Nuevo
+                </a>
+                <div class="user-btn">
+                    <span>👤 {{ user.username }}</span>
+                </div>
+            </div>
+        </header>
+
+        <section class="products-section">
+            <div class="users-grid">
+                {% for user in usuarios %}
+                    <div class="user-card {% if not user.is_active %}inactive{% endif %}">
+                        <div class="user-card-header">
+                            {% if 'Administrador' in user.groups.all|join:',' %}
+                                <span class="badge-rol admin">👨‍💼 Administrador</span>
+                            {% elif 'Almacenero' in user.groups.all|join:',' %}
+                                <span class="badge-rol almacenero">🛒 Almacenero</span>
+                            {% else %}
+                                <span class="badge-rol usuario">👤 Usuario</span>
+                            {% endif %}
+                            {% if not user.is_active %}
+                                <span class="badge-rol inactivo">❌ Inactivo</span>
+                            {% endif %}
+                        </div>
+                        <div class="user-card-body">
+                            <h3>{{ user.get_full_name|default:user.username }}</h3>
+                            <p class="username"><strong>@{{ user.username }}</strong></p>
+                            <p class="email"><i class="fas fa-envelope"></i> {{ user.email|default:"Sin correo" }}</p>
+                            <p class="last-login">
+                                <i class="fas fa-clock"></i> 
+                                {% if user.last_login %}
+                                    Último: {{ user.last_login|date:"d/m/Y H:i" }}
+                                {% else %}
+                                    Nunca ha iniciado sesión
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="user-card-footer">
+                            <form method="post" action="{% url 'admin_actualizar_rol' user.id %}" style="display:inline;">
+                                {% csrf_token %}
+                                <select name="rol" class="form-select-sm" onchange="this.form.submit()" 
+                                        {% if not user.is_active %}disabled{% endif %}>
+                                    <option value="Administrador"{% if 'Administrador' in user.groups.all|join:',' %} selected{% endif %}>👨‍💼 Admin</option>
+                                    <option value="Almacenero"{% if 'Almacenero' in user.groups.all|join:',' %} selected{% endif %}>🛒 Almacenero</option>
+                                </select>
+                            </form>
+                            <form method="post" action="{% url 'admin_desactivar_usuario' user.id %}" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm {% if user.is_active %}btn-danger{% else %}btn-secondary{% endif %}" 
+                                        title="{% if user.is_active %}Desactivar{% else %}Ya inactivo{% endif %}">
+                                    {% if user.is_active %}
+                                        <i class="fas fa-lock"></i>
+                                    {% else %}
+                                        <i class="fas fa-user-slash"></i>
+                                    {% endif %}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="empty-state">
+                        <div class="empty-icon">👥</div>
+                        <h3>No hay usuarios administrables</h3>
+                        <p>Aún no se han registrado usuarios con rol de Administrador o Almacenero.</p>
+                        <a href="{% url 'admin_crear_usuario' %}" class="btn btn-primary">➕ Registrar Primer Usuario</a>
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
+    </main>
+</div>
+
+<style>
+/* Estilos específicos para tarjetas de usuario */
+.users-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 24px;
+}
+
+.user-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+    border: 1px solid #eee;
+}
+
+.user-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+}
+
+.user-card.inactive {
+    opacity: 0.7;
+    border-left: 4px solid #95a5a6;
+}
+
+.user-card-header {
+    padding: 14px 16px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.user-card-body {
+    padding: 20px;
+    text-align: center;
+}
+
+.user-card-body h3 {
+    font-size: 1.3rem;
+    color: #2c3e50;
+    margin-bottom: 8px;
+}
+
+.username {
+    color: #7f8c8d;
+    font-weight: 500;
+    margin-bottom: 12px;
+}
+
+.email {
+    color: #3498db;
+    margin: 10px 0;
+}
+
+.last-login {
+    color: #95a5a6;
+    font-size: 0.9rem;
+    margin-top: 12px;
+}
+
+.user-card-footer {
+    padding: 16px;
+    background: #f8f9fa;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.form-select-sm {
+    font-size: 0.85rem;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid #ced4da;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    grid-column: 1 / -1;
+}
+
+.empty-icon {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    color: #bdc3c7;
+}
+
+.header-title {
+    display: flex;
+    flex-direction: column;
+}
+
+.subtitle {
+    color: #7f8c8d;
+    font-size: 1rem;
+    margin-top: 5px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .users-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .header-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+</style>
+{% endblock %}

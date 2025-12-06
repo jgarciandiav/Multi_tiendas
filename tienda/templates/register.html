@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <h1 class="logo">MultiTiendas</h1>
+
+    <div class="login-card">
+        <h2>Crear Cuenta</h2>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label>Nombre Completo</label>
+                {{ form.nombre }}
+                {% if form.nombre.errors %}<div class="text-danger">{{ form.nombre.errors }}</div>{% endif %}
+            </div>
+            <div class="form-group">
+                <label>Nombre de Usuario</label>
+                {{ form.username }}
+                {% if form.username.errors %}<div class="text-danger">{{ form.username.errors }}</div>{% endif %}
+            </div>
+            <div class="form-group">
+                <label>Correo Electrónico</label>
+                {{ form.email }}
+                {% if form.email.errors %}<div class="text-danger">{{ form.email.errors }}</div>{% endif %}
+            </div>
+            <div class="form-group">
+                <label>Contraseña</label>
+                {{ form.password }}
+                {% if form.password.errors %}<div class="text-danger">{{ form.password.errors }}</div>{% endif %}
+            </div>
+            <div class="form-group">
+                <label>Confirmar Contraseña</label>
+                {{ form.password_confirm }}
+                {% if form.password_confirm.errors %}<div class="text-danger">{{ form.password_confirm.errors }}</div>{% endif %}
+            </div>
+            <button type="submit" class="btn-login">✅ Registrarse</button>
+        </form>
+
+        <div class="links">
+            ¿Ya tienes cuenta? <a href="{% url 'login' %}">Inicia sesión</a>
+        </div>
+    </div>
+
+    <div class="footer-text">
+        <p>Tu tienda donde todo lo puedes encontrar, ahora más eficiente.</p>
+        <p class="cta">¡Regístrate y comienza a comprar!</p>
+    </div>
+</div>
+{% endblock %}

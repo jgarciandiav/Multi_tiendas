@@ -1,16 +1,65 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block title %}Mi Perfil - MultiTiendas{% endblock %}
+
 {% block content %}
 <div class="container mt-4">
-    <h2>👤 Mi Perfil</h2>
     <div class="card">
+        <div class="card-header">
+            <h2>👤 Mi Perfil</h2>
+        </div>
         <div class="card-body">
-            <p><strong>Usuario:</strong> {{ user.username }}</p>
-            <p><strong>Nombre:</strong> {{ user.get_full_name|default:"No especificado" }}</p>
-            <p><strong>Email:</strong> {{ user.email|default:"No especificado" }}</p>
+            <div class="row mb-3">
+                <div class="col-md-3"><strong>Usuario:</strong></div>
+                <div class="col-md-9">{{ user.username }}</div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-3"><strong>Nombre:</strong></div>
+                <div class="col-md-9">{{ user.get_full_name|default:"No especificado" }}</div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-3"><strong>Email:</strong></div>
+                <div class="col-md-9">{{ user.email|default:"No especificado" }}</div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-3"><strong>Rol:</strong></div>
+                <div class="col-md-9">
+                    {% if user.is_superuser %}
+                        <span class="badge-rol admin">Superusuario</span>
+                    {% elif user.groups.exists %}
+                        {% for group in user.groups.all %}
+                            {% if group.name == 'Administrador' %}
+                                <span class="badge-rol admin">{{ group.name }}</span>
+                            {% elif group.name == 'Almacenero' %}
+                                <span class="badge-rol almacenero">{{ group.name }}</span>
+                            {% elif group.name == 'Usuario' %}
+                                <span class="badge-rol usuario">{{ group.name }}</span>
+                            {% else %}
+                                <span class="badge-rol usuario">{{ group.name }}</span>
+                            {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        <span class="badge-rol usuario">Usuario</span>
+                    {% endif %}
+                    {% if not user.is_active %}
+                        <span class="badge-rol inactivo">❌ Inactivo</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-3"><strong>Último acceso:</strong></div>
+                <div class="col-md-9">
+                    {{ user.last_login|date:"d/m/Y H:i" }} 
+                    {% if not user.last_login %}<em>(Nunca)</em>{% endif %}
+                </div>
+            </div>
         </div>
     </div>
-    <a href="{% url 'dashboard' %}" class="btn btn-primary mt-3">← Volver al Dashboard</a>
+
+    <div class="mt-4">
+        <a href="{% url 'dashboard' %}" class="btn btn-primary">← Volver al Dashboard</a>
+        <a href="{% url 'logout' %}" class="btn btn-outline-danger">Cerrar Sesión</a>
+    </div>
 </div>
 {% endblock %}

@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Agregar/Actualizar Producto</h2>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="form-group">
+            <label>Nombre del Producto</label>
+            {{ form.nombre }}
+        </div>
+        <div class="form-group">
+            <label>Tipo de Producto</label>
+            {{ form.categoria }}
+        </div>
+        <div class="form-group">
+            <label>Categoría</label>
+            {{ form.categoria }}
+        </div>
+        <div class="form-group">
+            <label>Stock Inicial</label>
+            {{ form.cantidad }}
+        </div>
+        <div class="form-group">
+            <label>Fecha de Vencimiento</label>
+            {{ form.fecha_vencimiento }}
+        </div>
+        <div class="form-group">
+            <label>Imagen del Producto (opcional)</label>
+            {{ form.imagen }}
+        </div>
+        <button type="submit" class="btn btn-primary">✅ Guardar Producto</button>
+        <a href="{% url 'dashboard_almacenero' %}" class="btn btn-secondary">Ver Productos Existentes</a>
+    </form>
+</div>
+{% endblock %}

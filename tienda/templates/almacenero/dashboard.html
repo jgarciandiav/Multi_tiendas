@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Almacén - MultiTiendas{% endblock %}
+{% block body_class %}almacenero-dashboard{% endblock %}
+
+{% block content %}
+<div class="app-container">
+    <aside class="sidebar">
+        <div class="brand">
+            <h2>MultiTiendas</h2>
+            <p>Sistema de gestión</p>
+        </div>
+        <nav>
+            <div class="menu-item">
+                <span>📦 Productos en Almacén</span>
+                <i class="arrow">▶</i>
+            </div>
+            <a href="{% url 'agregar_producto_almacenero' %}" class="submenu-item">➕ Agregar Producto</a>
+            <a href="{% url 'dashboard_almacenero' %}" class="submenu-item">📋 Ver Productos Agregados</a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <header class="header">
+            <h2>Productos en Almacén</h2>
+            <div class="header-actions">
+                <div class="user-btn">
+                    <span>👤 {{ user.username }}</span>
+                </div>
+                <!-- Botón de logout -->
+                <a href="{% url 'logout' %}" class="btn btn-outline-danger btn-sm">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                </a>
+
+            </div>
+        </header>
+
+        <section class="products-section">
+            <div class="products-grid">
+                {% for producto in productos %}
+                    <div class="product-card almacenero">
+                        {% if producto.imagen %}
+                            <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}">
+                        {% else %}
+                            <div class="placeholder-img">📷</div>
+                        {% endif %}
+                        <div class="product-card-content">
+                            <h3>{{ producto.nombre }}</h3>
+                            <p><strong>Tipo:</strong> {{ producto.categoria.nombre }}</p>
+                            <p><strong>Categoría:</strong> 
+                                {% if producto.categoria.padre %}
+                                    {{ producto.categoria.padre.nombre }}
+                                {% else %}
+                                    {{ producto.categoria.nombre }}
+                                {% endif %}
+                            </p>
+                            <p><strong>Stock:</strong> {{ producto.cantidad }}</p>
+                            {% if producto.fecha_vencimiento %}
+                                <p class="vencimiento"><strong>⚠️ Vence:</strong> {{ producto.fecha_vencimiento|date:"d/m/Y" }}</p>
+                            {% endif %}
+                            {% if producto.precio %}
+                                <p class="price">Precio: S/ {{ producto.precio }}</p>
+                            {% else %}
+                                <p class="price text-muted">
+                                    Precio: 
+                                    <span class="precio-sin-asignar">Sin asignar</span>
+                                </p>
+                            {% endif %}
+                            <div class="btn-group">
+                                <a href="{% url 'editar_producto_almacenero' producto.id %}" class="btn btn-sm btn-dark">✏️ Editar</a>
+                                <button class="btn btn-sm btn-info" onclick="actualizarStock({{ producto.id }})">
+                                    ➕ Actualizar Stock
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            <i class="fas fa-warehouse"></i> No hay productos en el almacén.
+                            <br>
+                            <a href="{% url 'agregar_producto_almacenero' %}" class="btn btn-primary mt-2">
+                                ➕ Agregar Producto
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
+    </main>
+</div>
+
+<!-- Modal para actualizar stock (ligero, sin JS pesado) -->
+<div id="stockModal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <span class="close" onclick="cerrarModal()">&times;</span>
+        <h3>Actualizar Stock</h3>
+        <form id="stockForm" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="producto_id" id="producto_id">
+            <div class="form-group">
+                <label>Producto:</label>
+                <input type="text" id="nombre_producto" readonly class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Stock Actual:</label>
+                <input type="number" id="stock_actual" readonly class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Cantidad a Añadir:</label>
+                <input type="number" name="cantidad" min="1" value="1" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary">✅ Añadir al Stock</button>
+        </form>
+    </div>
+</div>
+
+<style>
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+}
+.modal-content {
+    background-color: white;
+    margin: 10% auto;
+    padding: 20px;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+}
+.close {
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+</style>
+
+<script>
+function actualizarStock(productoId) {
+    // En una versión sin JS, esto sería un enlace a una vista
+    // Pero como es ligero y mejora UX, lo dejamos como mejora
+    const producto = {{ productos|safe }};
+    // En producción, mejor usa un formulario POST simple
+    alert("Funcionalidad de 'Actualizar Stock' pendiente. Próximamente.");
+}
+
+function cerrarModal() {
+    document.getElementById('stockModal').style.display = 'none';
+}
+</script>
+{% endblock %}

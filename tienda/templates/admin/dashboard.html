@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - Administrador | MultiTiendas{% endblock %}
+{% block body_class %}admin-dashboard{% endblock %}
+
+{% block content %}
+<div class="app-container">
+    <aside class="sidebar">
+        <div class="brand">
+            <h2>MultiTiendas</h2>
+            <p>Sistema de gestión</p>
+        </div>
+        <nav>
+            <div class="menu-item">
+                <span>📦 Todos los Productos</span>
+                <i class="arrow">▶</i>
+            </div>
+            <a href="{% url 'dashboard' %}" class="submenu-item">Ver Productos</a>
+
+            <div class="menu-item">
+                <span>📦 Productos del Almacenero</span>
+                <i class="arrow">▶</i>
+            </div>
+            <a href="{% url 'admin_productos_sin_precio' %}" class="submenu-item">Asignar Precios</a>
+
+            <div class="menu-item">
+                <span>📊 Ver Productos Vendidos</span>
+                <i class="arrow">▶</i>
+            </div>
+            <a href="{% url 'admin_productos_vendidos' %}" class="submenu-item">Resumen por Fecha</a>
+
+            <div class="menu-item">
+                <span>👥 Gestión de Usuarios</span>
+                <i class="arrow">▶</i>
+            </div>
+            <a href="{% url 'admin_gestion_usuarios' %}" class="submenu-item">Administrar Usuarios</a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <header class="header">
+            <h2>Dashboard de Administrador</h2>
+            <div class="header-actions">
+                <div class="cart-btn">
+                    <a href="{% url 'ver_carrito' %}" style="color:white; text-decoration:none;">
+                        🛒 Mi Carrito
+                        <span class="badge">{{ carrito_total_items }}</span>
+                    </a>
+                </div>
+                
+                <!-- Botón de logout -->
+                <a href="{% url 'logout' %}" class="btn btn-outline-danger btn-sm">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                </a>
+                
+                <div class="user-btn">
+                    <span>👤 {{ user.username }}</span>
+                </div>
+            </div>
+        </header>
+
+        <section class="products-section">
+            <h3>Productos Disponibles (con precio)</h3>
+            <div class="products-grid">
+                {% for producto in productos %}
+                    <div class="product-card">
+                        {% if producto.imagen %}
+                            <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}">
+                        {% else %}
+                            <div class="placeholder-img">📷</div>
+                        {% endif %}
+                        <h3>{{ producto.nombre }}</h3>
+                        <p class="price">S/ {{ producto.precio }}</p>
+                        <p class="stock">Stock: {{ producto.cantidad }}</p>
+                        <p><strong>Tipo:</strong> {{ producto.categoria.nombre }}</p>
+                        <a href="#" class="btn btn-sm btn-info">📊 Ver ventas</a>
+                    </div>
+                {% empty %}
+                    <p>No hay productos con precio asignado.</p>
+                {% endfor %}
+            </div>
+        </section>
+    </main>
+</div>
+{% endblock %}
