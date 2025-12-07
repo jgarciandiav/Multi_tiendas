@@ -1,47 +1,76 @@
 {% extends 'base.html' %}
-{% load static %}
+#{% load static %}
+
+{% block title %}Dashboard - MultiTiendas{% endblock %}
+{% block body_class %}usuario-dashboard{% endblock %}
 
 {% block content %}
 <div class="app-container">
+    <!-- SIDEBAR -->
     <aside class="sidebar">
         <div class="brand">
             <h2>MultiTiendas</h2>
             <p>Sistema de gestión</p>
         </div>
-
         <nav>
-            <!-- Sección: Mis Compras -->
-            <div class="menu-item">
+            <!-- Mis Compras -->
+            <div class="menu-item-toggle" onclick="this.nextElementSibling.classList.toggle('expanded'); this.querySelector('.arrow').classList.toggle('rotated')">
                 <span>📦 Mis Compras</span>
                 <i class="arrow">▶</i>
             </div>
-            <a href="{% url 'historial_compras' %}" class="submenu-item">Historial</a>
+            <div class="submenu">
+                <a href="{% url 'historial_compras' %}" class="submenu-item">Historial</a>
+            </div>
 
             <!-- Categorías dinámicas -->
             {% for categoria in categorias %}
-                <div class="menu-item">
+                <div class="menu-item-toggle" onclick="this.nextElementSibling.classList.toggle('expanded'); this.querySelector('.arrow').classList.toggle('rotated')">
                     <span>{{ categoria.nombre }}</span>
                     <i class="arrow">▶</i>
                 </div>
-                {% for subcat in categoria.subcategorias.all %}
-                    <a href="?categoria={{ subcat.id }}" class="submenu-item">{{ subcat.nombre }}</a>
-                {% endfor %}
+                <div class="submenu">
+                    {% for subcat in categoria.subcategorias.all %}
+                        <a href="?categoria={{ subcat.id }}" class="submenu-item">{{ subcat.nombre }}</a>
+                    {% endfor %}
+                </div>
             {% endfor %}
 
-            <!-- Opciones adicionales -->
-            <div class="menu-item">
+            <!-- Mi Cuenta -->
+            <div class="menu-item-toggle" onclick="this.nextElementSibling.classList.toggle('expanded'); this.querySelector('.arrow').classList.toggle('rotated')">
                 <span>👤 Mi Cuenta</span>
                 <i class="arrow">▶</i>
             </div>
-            <a href="{% url 'logout' %}" class="submenu-item">Cerrar Sesión</a>
-            <a href="{% url 'mi_perfil' %}" class="submenu-item">Mi Perfil</a>
+            <div class="submenu">
+                <a href="{% url 'mi_perfil' %}" class="submenu-item">Mi Perfil</a>
+                <a href="{% url 'logout' %}" class="submenu-item">Cerrar Sesión</a>
+            </div>
         </nav>
     </aside>
+
+    <!-- MAIN CONTENT -->
     <main class="main-content">
+        <!-- HEADER -->
         <header class="header">
-            <form method="get">
-                <select name="categoria" class="category-filter" onchange="this.form.submit()">
-                    <option value="">Todos los productos</option>
+            <!-- 🔍 Búsqueda -->
+            <form method="get" class="search-box">
+                <input 
+                    type="text" 
+                    name="q" 
+                    value="{{ q }}" 
+                    placeholder="Buscar productos..." 
+                    class="form-control"
+                >
+                <button type="submit" class="btn">🔍 Buscar</button>
+                {% if q %}
+                    <a href="{% url 'dashboard' %}" class="btn btn-secondary">✕ Limpiar</a>
+                {% endif %}
+            </form>
+
+            <!-- 🗂️ Filtro por categoría -->
+            <form method="get" class="category-filter">
+                <label>Categoría:</label>
+                <select name="categoria" onchange="this.form.submit()">
+                    <option value="">Todas</option>
                     {% for cat in categorias %}
                         <option value="{{ cat.id }}" {% if categoria_seleccionada == cat.id|stringformat:"i" %}selected{% endif %}>
                             {{ cat.nombre }}
@@ -49,53 +78,108 @@
                     {% endfor %}
                 </select>
             </form>
+
+            <!-- 🛒 Carrito + 👤 Usuario -->
             <div class="header-actions">
-                <!-- Botón Mi Carrito -->
                 <a href="{% url 'ver_carrito' %}" class="cart-btn">
                     🛒 Mi Carrito
                     {% if carrito_total_items > 0 %}
                         <span class="badge">{{ carrito_total_items }}</span>
                     {% endif %}
                 </a>
-
-                <!-- Menú usuario -->
-                <div class="user-dropdown">
-                    <button class="user-btn">
-                        👤 {{ user.username }}
-                    </button>
-                    <div class="dropdown-menu" id="userDropdown">
-                        <a href="{% url 'mi_perfil' %}" class="dropdown-item">Mi Perfil</a>
-                        <a href="{% url 'historial_compras' %}" class="dropdown-item">Historial</a>
-                        <a href="{% url 'logout' %}" class="dropdown-item">Cerrar Sesión</a>
-                    </div>
-                </div>
+                <a href="{% url 'mi_perfil' %}" class="user-btn">
+                    <i class="fas fa-user"></i> {{ user.username }}
+                </a>
             </div>
         </header>
 
+        <!-- PRODUCTOS -->
         <section class="products-section">
             <h2>Todos los Productos</h2>
-            <div class="products-grid">
-                {% for producto in productos %}
-                    <div class="product-card">
-                        {% if producto.imagen %}
-                            <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}">
-                        {% else %}
-                            <div class="placeholder-img">📷</div>
-                        {% endif %}
-                        <h3>{{ producto.nombre }}</h3>
-                        <p class="price">S/ {{ producto.precio }}</p>
-                        <p class="stock">Stock: {{ producto.cantidad }}</p>
-                        <form method="post" action="{% url 'agregar_al_carrito' producto.id %}" style="margin:0;">
-                            {% csrf_token %}
-                            <input type="hidden" name="cantidad" value="1">
-                            <button type="submit" class="buy-btn">🛒 Añadir al Carrito</button>
-                        </form>
-                    </div>
-                {% empty %}
-                    <p>No hay productos disponibles.</p>
-                {% endfor %}
-            </div>
+
+            {% if productos %}
+                <div class="products-grid grid-3">
+                    {% for producto in productos %}
+                        <div class="product-card grid-item">
+                            {% if producto.imagen %}
+                                <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}">
+                            {% else %}
+                                <div class="placeholder-img">📷</div>
+                            {% endif %}
+                            <div class="product-card-content">
+                                <h3>{{ producto.nombre }}</h3>
+                                <p class="price">S/ {{ producto.precio|floatformat:2 }}</p>
+                                <p class="stock">Stock: {{ producto.cantidad }}</p>
+                                <form method="post" action="{% url 'agregar_al_carrito' producto.id %}" class="add-to-cart-form">
+                                    {% csrf_token %}
+                                    <div class="input-group">
+                                        <label>Cantidad:</label>
+                                        <input 
+                                            type="number" 
+                                            name="cantidad" 
+                                            value="1" 
+                                            min="1"
+                                            max="{{ producto.cantidad }}"
+                                            class="form-control"
+                                            style="width: 70px; text-align: center;"
+                                        >
+                                    </div>
+                                    <button type="submit" class="buy-btn">
+                                        🛒 Añadir al Carrito
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    {% if q or categoria_seleccionada %}
+                        <i class="fas fa-search"></i> No se encontraron productos con los criterios seleccionados.
+                        <br>
+                        <a href="{% url 'dashboard' %}" class="btn btn-outline-primary mt-2">Ver todos los productos</a>
+                    {% else %}
+                        <i class="fas fa-warehouse"></i> No hay productos disponibles en este momento.
+                    {% endif %}
+                </div>
+            {% endif %}
         </section>
+
     </main>
 </div>
+
+<!-- Estilos específicos para expansión (ya en style.css, pero incluidos aquí por integridad) -->
+<style>
+.submenu {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    background: rgba(0,0,0,0.05);
+}
+.submenu.expanded {
+    max-height: 300px;
+}
+.menu-item-toggle {
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    margin: 5px 0;
+    border-radius: 5px;
+    transition: background 0.2s;
+}
+.menu-item-toggle:hover {
+    background: rgba(255,255,255,0.1);
+}
+.arrow {
+    transition: transform 0.3s;
+}
+.arrow.rotated {
+    transform: rotate(90deg);
+}
+</style>
+
+<!-- Font Awesome (opcional, pero recomendado) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js" crossorigin="anonymous"></script>
 {% endblock %}

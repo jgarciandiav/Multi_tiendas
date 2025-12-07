@@ -48,7 +48,7 @@
                 <tfoot>
                     <tr>
                         <td colspan="3"><strong>Total:</strong></td>
-                        <td><strong>S/ {{ carrito.total_precio }}</strong></td>
+                        <td><strong>S/ {{ carrito.total_precio|floatformat:2 }}</strong></td>
                         <td></td>
                     </tr>
                 </tfoot>

@@ -6,81 +6,144 @@
 
 {% block content %}
 <div class="app-container">
+    <!-- SIDEBAR -->
     <aside class="sidebar">
         <div class="brand">
             <h2>MultiTiendas</h2>
             <p>Sistema de gestión</p>
         </div>
         <nav>
-            <div class="menu-item">
+            <div class="menu-item-toggle" onclick="this.nextElementSibling.classList.toggle('expanded'); this.querySelector('.arrow').classList.toggle('rotated')">
                 <span>📦 Todos los Productos</span>
                 <i class="arrow">▶</i>
             </div>
-            <a href="{% url 'dashboard' %}" class="submenu-item">Ver Productos</a>
+            <div class="submenu">
+                <a href="{% url 'dashboard' %}" class="submenu-item">Ver Productos</a>
+            </div>
 
-            <div class="menu-item">
+            <div class="menu-item-toggle" onclick="this.nextElementSibling.classList.toggle('expanded'); this.querySelector('.arrow').classList.toggle('rotated')">
                 <span>📦 Productos del Almacenero</span>
                 <i class="arrow">▶</i>
             </div>
-            <a href="{% url 'admin_productos_sin_precio' %}" class="submenu-item">Asignar Precios</a>
+            <div class="submenu">
+                <a href="{% url 'admin_productos_sin_precio' %}" class="submenu-item">Asignar Precios</a>
+            </div>
 
-            <div class="menu-item">
+            <div class="menu-item-toggle" onclick="this.nextElementSibling.classList.toggle('expanded'); this.querySelector('.arrow').classList.toggle('rotated')">
                 <span>📊 Ver Productos Vendidos</span>
                 <i class="arrow">▶</i>
             </div>
-            <a href="{% url 'admin_productos_vendidos' %}" class="submenu-item">Resumen por Fecha</a>
+            <div class="submenu">
+                <a href="{% url 'admin_productos_vendidos' %}" class="submenu-item">Resumen por Fecha</a>
+            </div>
 
-            <div class="menu-item">
+            <div class="menu-item-toggle" onclick="this.nextElementSibling.classList.toggle('expanded'); this.querySelector('.arrow').classList.toggle('rotated')">
                 <span>👥 Gestión de Usuarios</span>
                 <i class="arrow">▶</i>
             </div>
-            <a href="{% url 'admin_gestion_usuarios' %}" class="submenu-item">Administrar Usuarios</a>
+            <div class="submenu">
+                <a href="{% url 'admin_gestion_usuarios' %}" class="submenu-item">Administrar Usuarios</a>
+            </div>
+
+            <div class="menu-item-toggle" onclick="this.nextElementSibling.classList.toggle('expanded'); this.querySelector('.arrow').classList.toggle('rotated')">
+                <span>👤 Mi Cuenta</span>
+                <i class="arrow">▶</i>
+            </div>
+            <div class="submenu">
+                <a href="{% url 'mi_perfil' %}" class="submenu-item">Mi Perfil</a>
+                <a href="{% url 'logout' %}" class="submenu-item">Cerrar Sesión</a>
+            </div>
         </nav>
     </aside>
 
+    <!-- MAIN CONTENT -->
     <main class="main-content">
+        <!-- HEADER -->
         <header class="header">
-            <h2>Dashboard de Administrador</h2>
+            <h2>Productos Disponibles (con precio)</h2>
             <div class="header-actions">
-                <div class="cart-btn">
-                    <a href="{% url 'ver_carrito' %}" style="color:white; text-decoration:none;">
-                        🛒 Mi Carrito
-                        <span class="badge">{{ carrito_total_items }}</span>
-                    </a>
-                </div>
-                
-                <!-- Botón de logout -->
-                <a href="{% url 'logout' %}" class="btn btn-outline-danger btn-sm">
-                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
-                </a>
-                
                 <div class="user-btn">
-                    <span>👤 {{ user.username }}</span>
+                    <i class="fas fa-user"></i> {{ user.username }}
                 </div>
             </div>
         </header>
 
+        <!-- LISTA DE PRODUCTOS -->
         <section class="products-section">
-            <h3>Productos Disponibles (con precio)</h3>
-            <div class="products-grid">
-                {% for producto in productos %}
-                    <div class="product-card">
-                        {% if producto.imagen %}
-                            <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}">
-                        {% else %}
-                            <div class="placeholder-img">📷</div>
-                        {% endif %}
-                        <h3>{{ producto.nombre }}</h3>
-                        <p class="price">S/ {{ producto.precio }}</p>
-                        <p class="stock">Stock: {{ producto.cantidad }}</p>
-                        <p><strong>Tipo:</strong> {{ producto.categoria.nombre }}</p>
-                        <a href="#" class="btn btn-sm btn-info">📊 Ver ventas</a>
-                    </div>
-                {% empty %}
-                    <p>No hay productos con precio asignado.</p>
-                {% endfor %}
-            </div>
+            {% if productos %}
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th>Categoría</th>
+                            <th>Tipo</th>
+                            <th>Stock</th>
+                            <th>Precio Unitario</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for producto in productos %}
+                            <tr>
+                                <td>
+                                    {% if producto.imagen %}
+                                        <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}" style="width: 60px; height: 60px; object-fit: cover; margin-right: 10px; border-radius: 4px;">
+                                    {% else %}
+                                        <div style="width: 60px; height: 60px; background: #eee; display: flex; align-items: center; justify-content: center; border-radius: 4px;">📷</div>
+                                    {% endif %}
+                                    <strong>{{ producto.nombre }}</strong>
+                                </td>
+                                <td>{{ producto.categoria.nombre }}</td>
+                                <td>
+                                    {% if producto.categoria.padre %}
+                                        {{ producto.categoria.padre.nombre }}
+                                    {% else %}
+                                        {{ producto.categoria.nombre }}
+                                    {% endif %}
+                                </td>
+                                <td><span class="badge-rol">{{ producto.cantidad }}</span></td>
+                                <td>S/ {{ producto.precio|floatformat:2 }}</td>
+                                <td>
+                                    <a href="{% url 'admin_productos_vendidos' %}?producto_id={{ producto.id }}" class="btn btn-sm btn-info">📊 Ver ventas</a>
+                                    <a href="{% url 'editar_producto_almacenero' producto.id %}" class="btn btn-sm btn-dark">✏️ Editar</a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-box-open"></i> No hay productos con precio asignado.
+                    <br>
+                    <a href="{% url 'admin_productos_sin_precio' %}" class="btn btn-primary mt-2">
+                        ➕ Asignar Precios
+                    </a>
+                </div>
+            {% endif %}
         </section>
     </main>
 </div>
+
+<!-- Estilos específicos -->
+<style>
+.table td, .table th {
+    vertical-align: middle;
+    padding: 12px;
+}
+
+.table img {
+    border-radius: 4px;
+}
+
+.badge-rol {
+    background: #3498db;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js" crossorigin="anonymous"></script>
 {% endblock %}

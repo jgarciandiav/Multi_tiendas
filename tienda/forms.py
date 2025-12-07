@@ -1,6 +1,8 @@
 from django import forms
 from django.contrib.auth.models import User
 from .models import Producto, Categoria
+from django.utils import timezone
+
 
 class LoginForm(forms.Form):
     username = forms.CharField(
@@ -86,12 +88,18 @@ class ProductoForm(forms.ModelForm):
             'categoria': forms.Select(attrs={'class': 'form-control'}),
             'fecha_vencimiento': forms.DateInput(attrs={
                 'class': 'form-control',
-                'type': 'date'
+                'type': 'date',
+                'min': timezone.now().date().isoformat()  # ← Impide seleccionar fechas pasadas en el input
             }),
             'imagen': forms.ClearableFileInput(attrs={'class': 'form-control'}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Filtrar categorías para mostrar solo las hojas (subcategorías), no las padres
         self.fields['categoria'].queryset = Categoria.objects.filter(padre__isnull=False)
+
+    def clean_fecha_vencimiento(self):
+        fecha = self.cleaned_data.get('fecha_vencimiento')
+        if fecha and fecha < timezone.now().date():
+            raise forms.ValidationError("La fecha de vencimiento no puede ser anterior al día de hoy.")
+        return fecha

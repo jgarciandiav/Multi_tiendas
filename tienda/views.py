@@ -15,6 +15,9 @@ from .models import Producto, Categoria, Carrito, ItemCarrito, Orden, ItemOrden
 from django.contrib.auth.models import User, Group
 import csv
 
+#from tienda import models
+from django.db.models import Q
+
 
 
 # ===== DECORADORES DE ROL =====
@@ -100,34 +103,48 @@ def logout_view(request):
 
 @login_required
 def dashboard_view(request):
-    # ✅ Redirección automática según rol
-    if es_admin(request.user):
-        return redirect('admin_dashboard')
-    elif es_almacenero(request.user):
-        return redirect('dashboard_almacenero')
+    # ✅ Solo redirigir si NO hay parámetros de búsqueda/filtro
+    if not request.GET:
+        if es_admin(request.user):
+            return redirect('admin_dashboard')
+        elif es_almacenero(request.user):
+            return redirect('dashboard_almacenero')
 
-    # Usuario normal: mostrar productos con precio
+    # ✅ Si hay ?q=... o ?categoria=..., procesar aquí (usuario normal)
+    q = request.GET.get('q', '').strip()
     categoria_id = request.GET.get('categoria')
-    if categoria_id:
-        productos = Producto.objects.filter(
-            categoria_id=categoria_id,
-            cantidad__gt=0,
-            visible_para_usuario=True
-        )
-    else:
-        productos = Producto.objects.filter(
-            cantidad__gt=0,
-            visible_para_usuario=True
+
+    productos = Producto.objects.filter(
+        cantidad__gt=0,
+        visible_para_usuario=True
+    )
+
+    # Búsqueda
+    if q:
+        productos = productos.filter(
+            Q(nombre__icontains=q) | Q(descripcion__icontains=q)
         )
 
+    # Filtro por categoría
+    if categoria_id:
+        try:
+            categoria = Categoria.objects.get(id=categoria_id)
+            if categoria.subcategorias.exists():
+                productos = productos.filter(categoria__in=categoria.subcategorias.all())
+            else:
+                productos = productos.filter(categoria_id=categoria_id)
+        except Categoria.DoesNotExist:
+            pass
+
+    productos = productos.order_by('-created_at')
     categorias = Categoria.objects.filter(padre__isnull=True)
+
     return render(request, 'dashboard.html', {
         'productos': productos,
         'categorias': categorias,
         'categoria_seleccionada': categoria_id,
+        'q': q,
     })
-
-
 # ===== VISTAS DE USUARIO (ROL: USUARIO) =====
 
 @login_required
@@ -149,7 +166,9 @@ def agregar_al_carrito(request, producto_id):
         if cantidad < 1:
             messages.error(request, "La cantidad debe ser al menos 1.")
             return redirect('dashboard')
-
+        if cantidad > producto.cantidad:
+            messages.error(request, f"Solo hay {producto.cantidad} unidades disponibles.")
+            return redirect('dashboard')
         try:
             with transaction.atomic():
                 item, creado = ItemCarrito.objects.get_or_create(
@@ -375,8 +394,8 @@ def admin_productos_vendidos(request):
     items = ItemOrden.objects.select_related('orden__usuario', 'orden')
 
     if fecha:
-        from datetime import datetime
         try:
+            from datetime import datetime
             fecha_obj = datetime.strptime(fecha, '%Y-%m-%d').date()
             items = items.filter(orden__fecha__date=fecha_obj)
         except ValueError:
@@ -384,6 +403,7 @@ def admin_productos_vendidos(request):
             fecha = None
 
     from collections import defaultdict
+    from decimal import Decimal
     resumen = defaultdict(lambda: {
         'cantidad_total': 0,
         'importe_total': Decimal('0.00'),
@@ -396,10 +416,20 @@ def admin_productos_vendidos(request):
         key = item.producto_nombre
         resumen[key]['cantidad_total'] += item.cantidad
         resumen[key]['importe_total'] += item.subtotal
+        
+        # ✅ Usa item.producto_id (NO item.producto)
+        try:
+            producto_original = Producto.objects.get(id=item.producto_id)
+            if producto_original.categoria:
+                resumen[key]['categoria'] = producto_original.categoria.nombre
+                if producto_original.categoria.padre:
+                    resumen[key]['tipo'] = producto_original.categoria.padre.nombre
+        except Producto.DoesNotExist:
+            # Producto eliminado → dejar campos vacíos
+            pass
+
         if not resumen[key]['ultima_venta'] or item.orden.fecha > resumen[key]['ultima_venta']:
             resumen[key]['ultima_venta'] = item.orden.fecha
-            resumen[key]['categoria'] = item.producto.categoria.nombre if item.producto.categoria else ''
-            resumen[key]['tipo'] = item.producto.categoria.padre.nombre if item.producto.categoria and item.producto.categoria.padre else ''
 
     resumen_list = [
         {
@@ -407,7 +437,7 @@ def admin_productos_vendidos(request):
             'categoria': data['categoria'],
             'tipo': data['tipo'],
             'cantidad_total': data['cantidad_total'],
-            'precio_unitario': item.producto.precio if item.producto.precio else Decimal('0.00'),
+            'precio_unitario': item.precio_unitario,  # ✅ Ya está en ItemOrden
             'importe_total': data['importe_total'],
             'ultima_venta': data['ultima_venta']
         }
@@ -423,7 +453,6 @@ def admin_productos_vendidos(request):
         'total_cantidad': total_cantidad,
         'total_importe': total_importe
     })
-
 
 @login_required
 @user_passes_test(es_admin)
