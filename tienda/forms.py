@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.models import User
 from .models import Producto, Categoria
 from django.utils import timezone
-
+from .validators import validate_password_strength
 
 class LoginForm(forms.Form):
     username = forms.CharField(
@@ -54,6 +54,10 @@ class RegistroForm(forms.Form):
             'placeholder': 'Confirmar contraseña'
         })
     )
+    def clean_password(self):
+        password = self.cleaned_data.get('password')
+        validate_password_strength(password)  # ← Aplica validación
+        return password
 
     def clean_username(self):
         username = self.cleaned_data.get('username')

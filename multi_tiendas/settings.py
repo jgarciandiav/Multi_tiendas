@@ -7,13 +7,14 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
+    'tienda',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'tienda',
+    
 ]
 
 MIDDLEWARE = [
@@ -48,16 +49,20 @@ WSGI_APPLICATION = 'multi_tiendas.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'multi_tiendas_db',
+        'USER': 'postgres',
+        'PASSWORD': 'Dragonxt1',
+        'HOST': 'localhost',
+        'PORT': '5432',
     }
 }
-
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
     {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
+    {'NAME': 'tienda.validators.validate_password_strength'},
 ]
 
 LANGUAGE_CODE = 'es-es'
@@ -75,3 +80,17 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/dashboard/'
+
+# settings.py
+
+# Para desarrollo (emails en consola)
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# Para producción, usa SMTP:
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_HOST = 'smtp.gmail.com'
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+# EMAIL_HOST_USER = 'tu@email.com'
+# EMAIL_HOST_PASSWORD = 'tu_contraseña_app'
+
+DEFAULT_FROM_EMAIL = 'no-reply@multitiendas.com'

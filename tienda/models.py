@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 from decimal import Decimal
+from django.utils import timezone
+from datetime import timedelta
 
 class Categoria(models.Model):
     nombre = models.CharField(max_length=100, unique=True)
@@ -174,3 +176,32 @@ class ItemOrden(models.Model):
     @property
     def subtotal(self):
         return self.cantidad * self.precio_unitario
+    
+class LoginAttempt(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    attempts = models.PositiveIntegerField(default=0)
+    last_attempt = models.DateTimeField(auto_now=True)
+    blocked_until = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Intento de Login"
+        verbose_name_plural = "Intentos de Login"
+
+    def __str__(self):
+        return f"{self.user.username} - {self.attempts} intentos"
+
+    def is_blocked(self):
+        if self.blocked_until and self.blocked_until > timezone.now():
+            return True
+        # Si ya pasó el tiempo, resetear
+        if self.blocked_until and self.blocked_until <= timezone.now():
+            self.attempts = 0
+            self.blocked_until = None
+            self.save()
+        return False
+
+    def add_attempt(self):
+        self.attempts += 1
+        if self.attempts >= 5:
+            self.blocked_until = timezone.now() + timedelta(hours=2)
+        self.save()

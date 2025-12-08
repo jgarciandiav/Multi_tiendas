@@ -8,7 +8,11 @@
         <h2>Inicio de Sesión</h2>
         {% if messages %}
             {% for message in messages %}
-                <div class="alert alert-error">{{ message }}</div>
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+
             {% endfor %}
         {% endif %}
 
@@ -24,10 +28,10 @@
             </div>
             <button type="submit" class="btn-login">Iniciar Sesión</button>
             <div class="links">
-                <a href="#">¿Olvidaste tu contraseña?</a><br>
+                <a href="{% url 'password_reset' %}">¿Olvidaste tu contraseña?</a><br>
                 <a href="{% url 'register' %}">¿No tienes cuenta? Regístrate</a>
-            </div>        
-        
+            </div>
+            
         </form>
     </div>
 

@@ -14,7 +14,7 @@ from .forms import LoginForm, RegistroForm
 from .models import Producto, Categoria, Carrito, ItemCarrito, Orden, ItemOrden
 from django.contrib.auth.models import User, Group
 import csv
-
+from .models import LoginAttempt
 #from tienda import models
 from django.db.models import Q
 
@@ -36,20 +36,55 @@ def login_view(request):
         return redirect('dashboard')
 
     if request.method == 'POST':
-        form = LoginForm(data=request.POST)  # 👈 SOLO data=request.POST
+        form = LoginForm(request, data=request.POST)
+        username = request.POST.get('username')
+        
+        # Verificar bloqueo
+        if username:
+            try:
+                user = User.objects.get(username=username)
+                attempt, _ = LoginAttempt.objects.get_or_create(user=user)
+                if attempt.is_blocked():
+                    tiempo_restante = (attempt.blocked_until - timezone.now()).total_seconds() // 60
+                    messages.error(request, f"🔒 Tu cuenta está bloqueada por {int(tiempo_restante)} minutos por múltiples intentos fallidos.")
+                    return render(request, 'login.html', {'form': form})
+            except User.DoesNotExist:
+                pass  # Usuario no existe → manejar como error normal
+
         if form.is_valid():
-            username = form.cleaned_data['username']
-            password = form.cleaned_data['password']
-            user = authenticate(request, username=username, password=password)
-            if user is not None:
-                auth_login(request, user)
-                return redirect('dashboard')
-            else:
-                messages.error(request, 'Usuario o contraseña incorrectos.')
+            user = form.get_user()
+            # Verificar bloqueo antes de login
+            attempt, _ = LoginAttempt.objects.get_or_create(user=user)
+            if attempt.is_blocked():
+                tiempo_restante = (attempt.blocked_until - timezone.now()).total_seconds() // 60
+                messages.error(request, f"🔒 Tu cuenta está bloqueada por {int(tiempo_restante)} minutos.")
+                return render(request, 'login.html', {'form': form})
+
+            # Login exitoso → resetear intentos
+            LoginAttempt.objects.filter(user=user).update(attempts=0, blocked_until=None)
+            auth_login(request, user)
+            return redirect('dashboard')
         else:
-            messages.error(request, 'Usuario o contraseña incorrectos.')
+            # Intento fallido → registrar
+            username = request.POST.get('username')
+            if username:
+                try:
+                    user = User.objects.get(username=username)
+                    attempt, _ = LoginAttempt.objects.get_or_create(user=user)
+                    attempt.add_attempt()
+                    
+                    if attempt.is_blocked():
+                        messages.error(request, "🔒 Demasiados intentos fallidos. Tu cuenta está bloqueada por 2 horas.")
+                    else:
+                        messages.error(request, f"Usuario o contraseña incorrectos. Te quedan {5 - attempt.attempts} intentos.")
+                except User.DoesNotExist:
+                    messages.error(request, "Usuario o contraseña incorrectos.")
+            else:
+                messages.error(request, "Por favor, ingresa un usuario.")
+
     else:
         form = LoginForm()
+    
     return render(request, 'login.html', {'form': form})
 
 def register_view(request):
