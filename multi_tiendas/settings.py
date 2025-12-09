@@ -27,6 +27,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'tienda.middleware.SessionTimeoutMiddleware',
 ]
 
 ROOT_URLCONF = 'multi_tiendas.urls'
@@ -97,3 +98,8 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # EMAIL_HOST_PASSWORD = 'tu_contraseña_app'
 
 DEFAULT_FROM_EMAIL = 'no-reply@multitiendas.com'
+
+# Sesión: cerrar tras 5 minutos de inactividad
+SESSION_COOKIE_AGE = 300  # 600 segundos = 10 minutos
+SESSION_SAVE_EVERY_REQUEST = True  # Renueva la sesión con cada petición
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # Opcional: cerrar al cerrar navegador

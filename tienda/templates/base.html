@@ -29,9 +29,76 @@
     .arrow.rotated {
         transform: rotate(90deg);
     }
+ 
 </style>
 </head>
 <body>
     {% block content %}{% endblock %}
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const TIEMPO_INACTIVIDAD = 300; // 10 minutos
+        const ADVERTENCIA_SEGUNDOS = 60;
+        let segundosRestantes = TIEMPO_INACTIVIDAD;
+        let timer;
+
+        function actualizarContador() {
+            const minutos = Math.floor(segundosRestantes / 60);
+            const segundos = segundosRestantes % 60;
+            const display = `${minutos}:${segundos < 10 ? '0' : ''}${segundos}`;
+
+            // Crear banner si no existe
+            let banner = document.getElementById('session-banner');
+            if (!banner) {
+                banner = document.createElement('div');
+                banner.id = 'session-banner';
+                banner.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    width: 100%;
+                    background: #e74c3c;
+                    color: white;
+                    text-align: center;
+                    padding: 10px;
+                    font-weight: bold;
+                    z-index: 10000;
+                    display: none;
+                `;
+                document.body.appendChild(banner);
+            }
+
+            if (segundosRestantes <= ADVERTENCIA_SEGUNDOS) {
+                banner.style.background = segundosRestantes <= 10 ? '#c0392b' : '#e67e22';
+                banner.innerHTML = `🔒 Tu sesión expirará en: <strong>${display}</strong>`;
+                banner.style.display = 'block';
+            } else {
+                banner.style.display = 'none';
+            }
+
+            if (segundosRestantes <= 0) {
+                clearInterval(timer);
+                window.location.href = '/login/?expired=1';
+                return;
+            }
+
+            segundosRestantes--;
+        }
+
+        function reiniciarContador() {
+            segundosRestantes = TIEMPO_INACTIVIDAD;
+            if (!timer) {
+                timer = setInterval(actualizarContador, 1000);
+            }
+        }
+
+        // Iniciar y escuchar interacciones
+        reiniciarContador();
+        ['click', 'keypress', 'scroll', 'mousemove'].forEach(event => {
+            document.addEventListener(event, reiniciarContador, { passive: true });
+        });
+    });
+    </script>
+
+
 </body>
 </html>
