@@ -1,6 +1,9 @@
-from pathlib import Path
 import os
+from pathlib import Path
+from dotenv import load_dotenv
 
+
+load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-m0d3l0-k3y-f4k3-1234-5678-90ab-cdef12345678'
 DEBUG = True
@@ -50,11 +53,11 @@ WSGI_APPLICATION = 'multi_tiendas.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'multi_tiendas_db',
-        'USER': 'postgres',
-        'PASSWORD': 'Dragonxt1',
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'NAME': os.getenv('DB_NAME', BASE_DIR / 'db.sqlite3'),
+        'USER': os.getenv('DB_USER', ''),
+        'PASSWORD': os.getenv('DB_PASSWORD', ''),
+        'HOST': os.getenv('DB_HOST', ''),
+        'PORT': os.getenv('DB_PORT', ''),
     }
 }
 AUTH_PASSWORD_VALIDATORS = [
