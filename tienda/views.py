@@ -10,7 +10,7 @@ from xhtml2pdf import pisa
 from io import BytesIO
 from decimal import Decimal
 from django.db.models import Q
-from .forms import LoginForm, RegistroForm
+from .forms import LoginForm, RegistroForm, AdminCrearUsuarioForm
 from .models import Producto, Categoria, Carrito, ItemCarrito, Orden, ItemOrden
 from django.contrib.auth.models import User, Group
 import csv
@@ -512,18 +512,13 @@ def admin_gestion_usuarios(request):
 @user_passes_test(es_admin)
 def admin_crear_usuario(request):
     if request.method == "POST":
-        username = request.POST.get('username')
-        email = request.POST.get('email')
-        password = request.POST.get('password')
-        rol = request.POST.get('rol')
+        form = AdminCrearUsuarioForm(request.POST)
+        if form.is_valid():
+            username = form.cleaned_data['username']
+            email = form.cleaned_data['email']
+            password = form.cleaned_data['password']
+            rol = form.cleaned_data['rol']
 
-        if not username or not email or not password or not rol:
-            messages.error(request, "Todos los campos son obligatorios.")
-        elif User.objects.filter(username=username).exists():
-            messages.error(request, "Este nombre de usuario ya existe.")
-        elif User.objects.filter(email=email).exists():
-            messages.error(request, "Este correo ya está registrado.")
-        else:
             try:
                 user = User.objects.create_user(
                     username=username,
@@ -538,11 +533,10 @@ def admin_crear_usuario(request):
                 return redirect('admin_gestion_usuarios')
             except Exception as e:
                 messages.error(request, f"Error al crear usuario: {str(e)}")
+    else:
+        form = AdminCrearUsuarioForm()
 
-    return render(request, 'admin/crear_usuario.html', {
-        'roles': ['Administrador', 'Almacenero']
-    })
-
+    return render(request, 'admin/crear_usuario.html', {'form': form})
 
 @login_required
 @user_passes_test(es_admin)

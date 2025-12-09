@@ -3,9 +3,10 @@ from django.contrib.auth.models import User
 from .models import Producto, Categoria
 from django.utils import timezone
 from django.contrib.auth.forms import UserCreationForm
+from tienda.validators import PasswordStrengthValidator
+from django.core.exceptions import ValidationError
 
 class LoginForm(forms.Form):
-    """Formulario de login personalizado (sin AuthenticationForm)"""
     username = forms.CharField(
         max_length=150,
         widget=forms.TextInput(attrs={
@@ -22,48 +23,43 @@ class LoginForm(forms.Form):
     )
 
 
-class RegistroForm(UserCreationForm):
-    """
-    Formulario de registro con:
-    - Nombre completo
-    - Email obligatorio
-    - Validación automática de contraseña (por AUTH_PASSWORD_VALIDATORS)
-    """
+class RegistroForm(forms.Form):
     nombre = forms.CharField(
         max_length=100,
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre completo'}),
-        help_text="Tu nombre y apellido"
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre completo'})
+    )
+    username = forms.CharField(
+        max_length=30,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre de usuario'})
     )
     email = forms.EmailField(
-        widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Correo electrónico'}),
-        help_text="Usaremos este correo para recuperar tu contraseña"
+        widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Correo electrónico'})
+    )
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Contraseña'}),
+        help_text="Mínimo 8 caracteres, 1 mayúscula, 1 número y 1 carácter especial (@, #, $, %, &)."
+    )
+    password_confirm = forms.CharField(
+        widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Confirmar Contraseña'})
     )
 
-    class Meta:
-        model = User
-        fields = ("nombre", "username", "email", "password1", "password2")
-        widgets = {
-            'username': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre de usuario'}),
-        }
+    def clean_password(self):
+        password = self.cleaned_data.get('password')
+        if not password:
+            raise forms.ValidationError("Este campo es obligatorio.")
+        validator = PasswordStrengthValidator()
+        validator.validate(password)  # Lanza ValidationError si falla
+        return password
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Mejorar textos de ayuda
-        self.fields['password1'].help_text = "Mínimo 8 caracteres, 1 mayúscula y 1 número."
-        self.fields['password2'].help_text = "Repite la contraseña para verificar."
+    def clean(self):
+        cleaned_data = super().clean()
+        password = cleaned_data.get('password')
+        password_confirm = cleaned_data.get('password_confirm')
 
-    def save(self, commit=True):
-        user = super().save(commit=False)
-        # Separar nombre y apellido
-        nombre_completo = self.cleaned_data['nombre'].strip()
-        partes = nombre_completo.split(' ', 1)
-        user.first_name = partes[0]
-        user.last_name = partes[1] if len(partes) > 1 else ''
-        user.email = self.cleaned_data['email']
-        if commit:
-            user.save()
-        return user
-
+        if password and password_confirm and password != password_confirm:
+            self.add_error('password_confirm', "Las contraseñas no coinciden.")
+        return cleaned_data
+        
 class ProductoForm(forms.ModelForm):
     class Meta:
         model = Producto
@@ -90,3 +86,35 @@ class ProductoForm(forms.ModelForm):
         if fecha and fecha < timezone.now().date():
             raise forms.ValidationError("La fecha de vencimiento no puede ser anterior al día de hoy.")
         return fecha
+    
+# tienda/forms.py (añade al final)
+
+class AdminCrearUsuarioForm(forms.Form):
+    """
+    Formulario para que el administrador cree usuarios con validación reforzada.
+    """
+    username = forms.CharField(
+        max_length=30,
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+    email = forms.EmailField(
+        widget=forms.EmailInput(attrs={'class': 'form-control'})
+    )
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={'class': 'form-control'}),
+        help_text="Mínimo 8 caracteres, 1 mayúscula, 1 número y 1 carácter especial (@#$%&*)."
+    )
+    rol = forms.ChoiceField(
+        choices=[('Administrador', 'Administrador'), ('Almacenero', 'Almacenero')],
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+
+    def clean_password(self):
+        password = self.cleaned_data.get('password')
+        # Validar con nuestro validador
+        validator = PasswordStrengthValidator()
+        try:
+            validator.validate(password)
+        except ValidationError as e:
+            raise forms.ValidationError(e.message)
+        return password    
