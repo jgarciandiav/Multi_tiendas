@@ -2,9 +2,10 @@ from django import forms
 from django.contrib.auth.models import User
 from .models import Producto, Categoria
 from django.utils import timezone
-from .validators import validate_password_strength
+from django.contrib.auth.forms import UserCreationForm
 
 class LoginForm(forms.Form):
+    """Formulario de login personalizado (sin AuthenticationForm)"""
     username = forms.CharField(
         max_length=150,
         widget=forms.TextInput(attrs={
@@ -21,65 +22,47 @@ class LoginForm(forms.Form):
     )
 
 
-class RegistroForm(forms.Form):
+class RegistroForm(UserCreationForm):
+    """
+    Formulario de registro con:
+    - Nombre completo
+    - Email obligatorio
+    - Validación automática de contraseña (por AUTH_PASSWORD_VALIDATORS)
+    """
     nombre = forms.CharField(
         max_length=100,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Nombre completo'
-        })
-    )
-    username = forms.CharField(
-        max_length=30,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Nombre de usuario'
-        })
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre completo'}),
+        help_text="Tu nombre y apellido"
     )
     email = forms.EmailField(
-        widget=forms.EmailInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Correo electrónico'
-        })
+        widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Correo electrónico'}),
+        help_text="Usaremos este correo para recuperar tu contraseña"
     )
-    password = forms.CharField(
-        widget=forms.PasswordInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Contraseña'
-        })
-    )
-    password_confirm = forms.CharField(
-        widget=forms.PasswordInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Confirmar contraseña'
-        })
-    )
-    def clean_password(self):
-        password = self.cleaned_data.get('password')
-        validate_password_strength(password)  # ← Aplica validación
-        return password
 
-    def clean_username(self):
-        username = self.cleaned_data.get('username')
-        if User.objects.filter(username__iexact=username).exists():
-            raise forms.ValidationError("Este nombre de usuario ya está en uso.")
-        return username
+    class Meta:
+        model = User
+        fields = ("nombre", "username", "email", "password1", "password2")
+        widgets = {
+            'username': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre de usuario'}),
+        }
 
-    def clean_email(self):
-        email = self.cleaned_data.get('email')
-        if User.objects.filter(email__iexact=email).exists():
-            raise forms.ValidationError("Este correo ya está registrado.")
-        return email
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Mejorar textos de ayuda
+        self.fields['password1'].help_text = "Mínimo 8 caracteres, 1 mayúscula y 1 número."
+        self.fields['password2'].help_text = "Repite la contraseña para verificar."
 
-    def clean(self):
-        cleaned_data = super().clean()
-        password = cleaned_data.get('password')
-        password_confirm = cleaned_data.get('password_confirm')
-
-        if password and password_confirm and password != password_confirm:
-            raise forms.ValidationError("Las contraseñas no coinciden.")
-        return cleaned_data
-
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        # Separar nombre y apellido
+        nombre_completo = self.cleaned_data['nombre'].strip()
+        partes = nombre_completo.split(' ', 1)
+        user.first_name = partes[0]
+        user.last_name = partes[1] if len(partes) > 1 else ''
+        user.email = self.cleaned_data['email']
+        if commit:
+            user.save()
+        return user
 
 class ProductoForm(forms.ModelForm):
     class Meta:
